@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>TODO List with Edit and Complete</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 500px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f9f9f9;
+            border-radius: 8px;
+        }
+
+        h1, h2 {
+            text-align: center;
+        }
+
+        #items > div {
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #fff;
+            padding: 8px 12px;
+            border-radius: 6px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        #items input[type="text"] {
+            flex-grow: 1;
+            font-size: 1rem;
+            border: none;
+            border-bottom: 2px solid transparent;
+            outline: none;
+            transition: border-color 0.2s ease;
+        }
+
+        #items input[type="text"]:focus {
+            border-color: #007bff;
+        }
+
+        #items p {
+            flex-grow: 1;
+            margin: 0;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        #items p.completed {
+            text-decoration: line-through;
+            color: #888;
+        }
+
+        button {
+            background-color: #007bff;
+            border: none;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        input#itemInput {
+            width: calc(100% - 100px);
+            padding: 8px 10px;
+            font-size: 1rem;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            margin-right: 8px;
+        }
+
+        #clearCompletedBtn {
+            display: block;
+            margin: 15px auto 0;
+            background-color: #dc3545;
+        }
+
+        #clearCompletedBtn:hover {
+            background-color: #a71d2a;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>TODO List</h1>
+    <h2>Items</h2>
+    <div id="items"></div>
+    <input id="itemInput" type="text" placeholder="Add an item" />
+    <button onclick="addItem()">Add Item</button>
+    <button id="clearCompletedBtn" onclick="clearCompleted()">Clear Completed</button>
+    <script>
+        let items = [];
+
+const itemsDiv = document.getElementById("items");
+const input = document.getElementById("itemInput");
+const storageKey = "todoItems";
+
+function renderItems() {
+    itemsDiv.innerHTML = "";
+
+    for (const [idx, item] of items.entries()) {
+        const container = document.createElement("div");
+
+        // Checkbox to mark completed
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.checked = item.completed || false;
+        checkbox.onclick = () => toggleComplete(idx);
+        container.appendChild(checkbox);
+
+        // Text or input for editing
+        const text = document.createElement("p");
+        text.textContent = item.text;
+        text.className = item.completed ? "completed" : "";
+        text.title = "Click to edit";
+        container.appendChild(text);
+
+        // On clicking text, replace with input field to edit
+        text.onclick = () => {
+            const editInput = document.createElement("input");
+            editInput.type = "text";
+            editInput.value = item.text;
+            editInput.style.flexGrow = "1";
+
+            // Replace p with input
+            container.replaceChild(editInput, text);
+            editInput.focus();
+
+            // Save on enter or blur
+            editInput.onblur = () => finishEdit(editInput, idx, container, text);
+            editInput.onkeydown = (e) => {
+                if (e.key === "Enter") {
+                    editInput.blur();
+                }
+            };
+        };
+
+        // Delete button
+        const button = document.createElement("button");
+        button.textContent = "Delete";
+        button.onclick = () => removeItem(idx);
+        container.appendChild(button);
+
+        itemsDiv.appendChild(container);
+    }
+}
+
+function finishEdit(inputElement, idx, container, textElement) {
+    const newText = inputElement.value.trim();
+    if (newText) {
+        items[idx].text = newText;
+    }
+    renderItems();
+    saveItems();
+}
+
+function loadItems() {
+    const oldItems = localStorage.getItem(storageKey);
+    if (oldItems) items = JSON.parse(oldItems);
+    renderItems();
+}
+
+function saveItems() {
+    localStorage.setItem(storageKey, JSON.stringify(items));
+}
+
+function addItem() {
+    const value = input.value.trim();
+    if (!value) {
+        alert("You cannot add an empty item");
+        return;
+    }
+    items.push({ text: value, completed: false });
+    input.value = "";
+    renderItems();
+    saveItems();
+}
+
+function removeItem(idx) {
+    items.splice(idx, 1);
+    renderItems();
+    saveItems();
+}
+
+function toggleComplete(idx) {
+    items[idx].completed = !items[idx].completed;
+    renderItems();
+    saveItems();
+}
+
+function clearCompleted() {
+    items = items.filter(item => !item.completed);
+    renderItems();
+    saveItems();
+}
+
+// Add Enter key support for adding new item
+input.addEventListener("keydown", function (e) {
+    if (e.key === "Enter") {
+        addItem();
+    }
+});
+
+// Load items from localStorage on page load
+document.addEventListener("DOMContentLoaded", loadItems);
+
+    </script>
+</body>
+
+</html>
